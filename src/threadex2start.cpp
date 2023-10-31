@@ -33,6 +33,10 @@ int main()
 	// Wait till threads are completed before main continues (notice however that threads do never return).
 	pthread_join(thread1, NULL);
 	pthread_join(thread2, NULL);
+
+	sleep(10);
+	// This returns error when mutex is still busy.
+	pthread_mutex_destroy( &mutex1);
 }
 
 void *functionC(void *)
@@ -40,8 +44,11 @@ void *functionC(void *)
 	while (1)
 	{
 		// lock mutex (try to see how the behaviour changes if the mutex is present or absent)
-		pthread_mutex_lock( &mutex1);
-		pthread_mutex_lock( &mutex1);
+		int ret = pthread_mutex_lock( &mutex1);
+		/* For recursive mutex the operation will be still succesfull 
+		   and function will be still executed, but the kernel 
+		   incrementation */ 
+		// printf("Mutex lock returns: %d\n", ret);
 
 
 		temp = counter;
@@ -55,11 +62,10 @@ void *functionC(void *)
 		printf("Counter value: %d \n",counter);
 
 		// unlock mutex (try to see how the behaviour changes if the mutex is present or absent)
-		pthread_mutex_unlock( &mutex1);
-		pthread_mutex_unlock( &mutex1);
+		// pthread_mutex_unlock( &mutex1);
 
 	}
 }
 
 // OPTIONAL: try to define the mutex as a "recursive" (see the slides about the concept of a "recursive mutex"). Each
-// thread must call the lock function and the unlock function twice to test the mechanism.
+// thread must call the lock function and the unlock function twice to test the mechanism.g
