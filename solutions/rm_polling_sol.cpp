@@ -15,20 +15,16 @@
 void task1_code( );
 void task2_code( );
 void task3_code( );
-void taskA_code();
 
 //code of aperiodic tasks
 void task4_code( );
 void task5_code( );
-void taskB_code( );
 
 //characteristic function of the thread, only for timing and synchronization
 //periodic tasks
 void *task1( void *);
 void *task2( void *);
 void *task3( void *);
-void *taskA( void *);
-void *taskB( void *);
 
 //aperiodic tasks
 // We do not need to create thread functions corresponding to aperiodic tasks
@@ -85,11 +81,10 @@ main()
 	//the third task has period 400 millisecond
 	//you can already order them according to their priority; 
 	//if not, you will need to sort them
-    // ADDED HERE BIGER PERIODS
-  	periods[0]= 500000000; //in nanoseconds
-  	periods[1]= 1000000000; //in nanoseconds
-  	periods[2]= 2000000000; //in nanoseconds
-  	periods[3]= 4000000000; //in nanoseconds
+  	periods[0]= 50000000; //in nanoseconds
+  	periods[1]= 100000000; //in nanoseconds
+  	periods[2]= 200000000; //in nanoseconds
+  	periods[3]= 400000000; //in nanoseconds
 
   	//for aperiodic tasks we do not need to set the period, since they are not implemented 
 	//as threads

@@ -1,3 +1,4 @@
+// ADDITIONAL TASK _ ADDD ONE PERIODIC AND APERIODIC TASK TO THIS
 //compile with: g++ -lpthread <sourcename> -o <executablename>
 
 //This exercise shows how to schedule threads with Rate Monotonic with a Polling Server
@@ -28,7 +29,7 @@ void *task1( void *);
 void *task2( void *);
 void *task3( void *);
 void *taskA( void *);
-void *taskB( void *);
+
 
 //aperiodic tasks
 // We do not need to create thread functions corresponding to aperiodic tasks
@@ -40,12 +41,15 @@ void *polling_server( void *);
 // initialization of mutexes and conditions (only for aperiodic scheduling)
 pthread_mutex_t mutex_task_4 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_task_5 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_task_B = PTHREAD_MUTEX_INITIALIZER;
+
 
 // we do not need conditioned variable for the polling server, since aperiodic tasks are no more implemented as threads
 // however we need to add two simple flags that are used to tell the Polling Server when it is necessary to schedule
 // Aperiodic tasks
 bool flag4 = false;
 bool flag5 = false;
+bool flagB = false;
 
 // the polling server keeps a queue of requests, and initialize the indexes 
 // of the queue (one for reading, one for writing) to 0;
@@ -56,13 +60,13 @@ int qindex2 = 0;
 #define INNERLOOP 1000
 #define OUTERLOOP 2000
 
-// We now have 3 periodic tasks and 1 Polling Server, which totals 4 periodic tasks
-#define NPERIODICTASKS 4
+// We now have 4 periodic tasks and 1 Polling Server, which totals 5 periodic tasks
+#define NPERIODICTASKS 5
 
 // We only need periodic tasks and the Polling server to be implemented like threads, 
 // since aperiodic tasks are not implemented as threads but as "function" called by the
 // polling server. Then we set NTASKS equals to NPERIODIC TASKS only
-#define NAPERIODICTASKS 2
+#define NAPERIODICTASKS 3
 #define NTASKS NPERIODICTASKS 
 
 long int periods[NTASKS];
@@ -85,7 +89,7 @@ main()
 	//the third task has period 400 millisecond
 	//you can already order them according to their priority; 
 	//if not, you will need to sort them
-    // ADDED HERE BIGER PERIODS
+    // ADDED HERE BIGER PERIODS  TO MAKE SURE IT IS SCHEDULABLE
   	periods[0]= 500000000; //in nanoseconds
   	periods[1]= 1000000000; //in nanoseconds
   	periods[2]= 2000000000; //in nanoseconds
@@ -136,12 +140,17 @@ main()
 			task2_code();
       		if (i==3)
 			task3_code();
+            if (i==4)
+			taskA_code();
       		
       		//aperiodic tasks
       		if (i==4)
 			task4_code();
       		if (i==5)
 			task5_code();
+			if (i==6)
+			task5_code();
+
 
 		clock_gettime(CLOCK_REALTIME, &time_2);
 
@@ -160,7 +169,7 @@ main()
 		// In general, this constraints should not hold: ideally, the Polling Server should be able to
 		// schedule the aperiodic tasks by possibly splitting them into different periods 
 		// of the Server, but this would make the code too complex for our exercise
-		if (i == 4 || i == 5)
+		if (i == 4 || i == 5 || i == 6)
 		{
 			// Here the Capacity of the Server is updated to guarantee that Aperiodic Tasks can
 			// be scheduled within the same period of the Server while keeping the set of 
@@ -174,7 +183,7 @@ main()
 	printf ("\nPolling Server Capacity is %lf", WCET[0]); fflush(stdout);
 
     	// compute U by considering the Polling Server and the three periodic tasks
-	double U = WCET[0]/periods[0]+WCET[1]/periods[1]+WCET[2]/periods[2]+WCET[3]/periods[3];
+	double U = WCET[0]/periods[0]+WCET[1]/periods[1]+WCET[2]/periods[2]+WCET[3]/periods[3] + WCET[4]/periods[4];
 
     	// compute Ulub by considering the fact that we have harmonic relationships between periods
 	double Ulub = 1;
@@ -253,6 +262,7 @@ main()
   	iret[1] = pthread_create( &(thread_id[1]), &(attributes[1]), task1, NULL);
   	iret[2] = pthread_create( &(thread_id[2]), &(attributes[2]), task2, NULL);
   	iret[3] = pthread_create( &(thread_id[3]), &(attributes[3]), task3, NULL);
+	iret[4] = pthread_create( &(thread_id[4]), &(attributes[4]), taskA, NULL);
 
   	// join all threads (pthread_join)
 	// we need to join the polling server and periodic tasks
@@ -260,6 +270,7 @@ main()
   	pthread_join( thread_id[1], NULL);
   	pthread_join( thread_id[2], NULL);
   	pthread_join( thread_id[3], NULL);
+	pthread_join( thread_id[4], NULL);
 
 	// print the number of missed deadlines, if any
   	for (i = 0; i < NTASKS; i++)
@@ -319,6 +330,22 @@ void task1_code()
 		// if it is required to execute the aperiodic task
 
       		pthread_mutex_unlock(&mutex_task_5);
+    	}
+  	// when the random variable uno=1, then aperiodic task 5 must
+  	// be executed
+  	if (uno == 2)
+    	{
+      		printf(":ex(B)");fflush(stdout);
+      		pthread_mutex_lock(&mutex_task_B);
+
+		flag5 = true;
+		// We do not need to signal a variable here, since we are not
+		// waking up a thread. If we want to execute the aperiodic task 4,
+		// it is sufficient to properly set the value of a standard variable, that
+		// will be read by the Polling Server at the beginning of its execution to check
+		// if it is required to execute the aperiodic task
+
+      		pthread_mutex_unlock(&mutex_task_B);
     	}
   
   	//print the id of the current task
@@ -437,6 +464,44 @@ void *task3( void *ptr)
     }
 }
 
+void taskA_code()
+{
+	//print the id of the current task
+  	printf(" A[ "); fflush(stdout);
+	int i,j;
+	double uno;
+  	for (i = 0; i < OUTERLOOP; i++)
+    	{
+      		for (j = 0; j < INNERLOOP; j++);		
+			double uno = rand()*rand()%10;
+    	}
+	//print the id of the current task
+  	printf(" ]A "); fflush(stdout);
+}
+
+void *taskA( void *ptr)
+{
+	// set thread affinity, that is the processor on which threads shall run
+	cpu_set_t cset;
+	CPU_ZERO (&cset);
+	CPU_SET(0, &cset);
+	pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cset);
+
+	int i=0;
+  	for (i=0; i < 25; i++)
+    	{
+      		taskA_code();
+
+		// Please be careful: the index 0 in all structures now refers to the Polling Server,
+		// whereas the third periodic task is now assigned the index 3
+		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_arrival_time[3], NULL);
+		long int next_arrival_nanoseconds = next_arrival_time[3].tv_sec*1000000000 + next_arrival_time[3].tv_nsec + periods[3];
+		next_arrival_time[3].tv_sec= next_arrival_nanoseconds/1000000000;
+		next_arrival_time[3].tv_nsec= next_arrival_nanoseconds%1000000000;
+    }
+}
+
+
 void task4_code()
 {
   	printf(" 4[ "); fflush(stdout);
@@ -448,6 +513,10 @@ void task4_code()
   	printf(" ]4 "); fflush(stdout);
   	fflush(stdout);
 }
+
+
+
+
 
 // the thread function void *task4(void*) does not exist any more,
 // since aperiodic tasks are no more implemented as threads. Instead, we only have a 
@@ -464,6 +533,7 @@ void task5_code()
     	}	
   	printf(" ]5 "); fflush(stdout);
 }
+
 
 // the thread function void *task5(void*) does not exist any more,
 // since aperiodic tasks are no more implemented as threads. Instead, we only have a 
@@ -506,6 +576,13 @@ void *polling_server( void *ptr)
 			flag5 = false;
 		}
      		pthread_mutex_unlock(&mutex_task_5);
+				if (flag5) 
+		{
+			qrequests[qindex1]=5;
+			qindex1 = (qindex1 + 1) % 20; 
+			flag5 = false;
+		}
+     		pthread_mutex_unlock(&mutex_task_5);
 
 		// if the queue contains a request to execute task4, 
 		// do it and move the index to the next element of the queue
@@ -521,6 +598,12 @@ void *polling_server( void *ptr)
 			task5_code();
 			qindex2 = (qindex2 + 1) % 20; 
 		}
+		else if (qrequests [qindex2] == 6)
+		{
+			taskB_code();
+			qindex2 = (qindex2 + 1) % 20; 
+		}
+		
 		printf(" ]PS "); fflush(stdout);
 		
 		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_arrival_time[0], NULL);
